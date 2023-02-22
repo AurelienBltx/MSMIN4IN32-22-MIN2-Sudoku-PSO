@@ -101,31 +101,31 @@ public class SolverPSO : ISudokuSolver
                     var neighborError = neighborSudoku.Error;
 
                     var p = _rnd.NextDouble();
-                    if (neighborError < hive[i].Error || p < 0.001)
+                    if (neighborError < hive[i].Error || p < 0.001) //Si l'ereur est meillieur ou que p est <0.001
                     {
-                        hive[i].Matrix = MatrixHelper.DuplicateMatrix(neighbor);
+                        hive[i].Matrix = MatrixHelper.DuplicateMatrix(neighbor); //Accept le nouveau sudoku
                         hive[i].Error = neighborError;
                         if (neighborError < hive[i].Error) hive[i].Age = 0;
 
-                        if (neighborError >= bestError) continue;
+                        if (neighborError >= bestError) continue;//Si l'erreu est meillieur que le sudoku de référence, prend sa place
                         bestError = neighborError;
                         bestSolution = neighborSudoku;
                     }
-                    else
+                    else //Passe à la génération suivante
                     {
                         hive[i].Age++;
-                        if (hive[i].Age <= 1000) continue;
+                        if (hive[i].Age <= 1000) continue; //Si l'age est supérieur à 1000 l'ouvrier prend un nouveau sudoku aléatoirement généré
                         var randomSudoku = Sudoku.New(MatrixHelper.RandomMatrix(_rnd, sudoku.CellValues));
                         hive[i] = new Organism(0, randomSudoku.CellValues, randomSudoku.Error, 0);
                     }
                 }
                 else//Si l'organism est un Explorer
                 {
-                    var randomSudoku = Sudoku.New(MatrixHelper.RandomMatrix(_rnd, sudoku.CellValues));
+                    var randomSudoku = Sudoku.New(MatrixHelper.RandomMatrix(_rnd, sudoku.CellValues));//Créé un nouveau sudoku aléatoirement généré
                     hive[i].Matrix = MatrixHelper.DuplicateMatrix(randomSudoku.CellValues);
-                    hive[i].Error = randomSudoku.Error;
+                    hive[i].Error = randomSudoku.Error;//Calcule son erreur
 
-                    if (hive[i].Error >= bestError) continue;
+                    if (hive[i].Error >= bestError) continue;//Si elle est meilleur que celui de référence prend sa place
                     bestError = hive[i].Error;
                     bestSolution = randomSudoku;
                 }
@@ -134,36 +134,37 @@ public class SolverPSO : ISudokuSolver
             // merge best worker with best explorer into worst worker
             var bestWorkerIndex = 0;
             var smallestWorkerError = hive[0].Error;
-            for (var i = 0; i < numberOfWorkers; ++i)
+            for (var i = 0; i < numberOfWorkers; ++i) //Pour chaque travailleur
             {
-                if (hive[i].Error >= smallestWorkerError) continue;
+                if (hive[i].Error >= smallestWorkerError) continue; //Trouver le meilleur travailleur
                 smallestWorkerError = hive[i].Error;
                 bestWorkerIndex = i;
             }
 
             var bestExplorerIndex = numberOfWorkers;
             var smallestExplorerError = hive[numberOfWorkers].Error;
-            for (var i = numberOfWorkers; i < numOrganisms; ++i)
+            for (var i = numberOfWorkers; i < numOrganisms; ++i) //Pour chaque exploreur
             {
-                if (hive[i].Error >= smallestExplorerError) continue;
+                if (hive[i].Error >= smallestExplorerError) continue; //Trouver le meilleur exploreur
                 smallestExplorerError = hive[i].Error;
                 bestExplorerIndex = i;
             }
 
             var worstWorkerIndex = 0;
             var largestWorkerError = hive[0].Error;
-            for (var i = 0; i < numberOfWorkers; ++i)
+            for (var i = 0; i < numberOfWorkers; ++i) //Trouver chaque travilleur
             {
-                if (hive[i].Error <= largestWorkerError) continue;
+                if (hive[i].Error <= largestWorkerError) continue; //Trouver le pire travilleur
                 largestWorkerError = hive[i].Error;
                 worstWorkerIndex = i;
             }
 
+            //Merger le meilleur travailleur et le meilleur exploreur
             var merged = MatrixHelper.MergeMatrices(_rnd, hive[bestWorkerIndex].Matrix, hive[bestExplorerIndex].Matrix);
             var mergedSudoku = Sudoku.New(merged);
-
+            //Attribuer cette nouvelle grille au pire travailleur
             hive[worstWorkerIndex] = new Organism(0, merged, mergedSudoku.Error, 0);
-            if (hive[worstWorkerIndex].Error < bestError)
+            if (hive[worstWorkerIndex].Error < bestError)//Regarder si cette nouvelle grille est la meilleur solution
             {
                 bestError = hive[worstWorkerIndex].Error;
                 bestSolution = mergedSudoku;
